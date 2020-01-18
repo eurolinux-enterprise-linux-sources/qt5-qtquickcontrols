@@ -1,12 +1,22 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
+** Copyright (C) 2016 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the test suite of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:BSD$
-** You may use this file under the terms of the BSD license as follows:
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
+**
+** BSD License Usage
+** Alternatively, you may use this file under the terms of the BSD license
+** as follows:
 **
 ** "Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are
@@ -594,9 +604,6 @@ Item {
             calendar.maximumDate = new Date(2014, 2, 31);
             calendar.__locale = Qt.locale("en_GB");
 
-            hoveredSignalSpy.target = calendar;
-            hoveredSignalSpy.signalName = "hovered";
-
             pressedSignalSpy.target = calendar;
             pressedSignalSpy.signalName = "pressed";
 
@@ -622,12 +629,13 @@ Item {
             mousePress(calendar, toPixelsX(5), toPixelsY(0), Qt.LeftButton);
             compare(calendar.selectedDate, new Date(2014, 1, 1));
             compare(calendar.__panel.pressedCellIndex, 5);
-            compare(hoveredSignalSpy.count, 1);
             compare(pressedSignalSpy.count, 1);
             compare(releasedSignalSpy.count, 0);
             compare(clickedSignalSpy.count, 0);
 
-            hoveredSignalSpy.clear();
+            hoveredSignalSpy.target = calendar;
+            hoveredSignalSpy.signalName = "hovered";
+
             pressedSignalSpy.clear();
             releasedSignalSpy.clear();
             clickedSignalSpy.clear();

@@ -1,12 +1,22 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
+** Copyright (C) 2016 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the test suite of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:BSD$
-** You may use this file under the terms of the BSD license as follows:
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
+**
+** BSD License Usage
+** Alternatively, you may use this file under the terms of the BSD license
+** as follows:
 **
 ** "Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are
@@ -38,11 +48,12 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.2
+import QtQuick 2.6
 import QtTest 1.0
 import QtQuickControlsTests 1.0
-import QtQuick.Controls 1.2
+import QtQuick.Controls 1.4
 import QtQuick.Controls.Private 1.0
+import QtQuick.Controls.Styles 1.4
 
 Item {
     id: container
@@ -62,6 +73,12 @@ Item {
 
         TestUtil {
             id: util
+        }
+
+        Component {
+            id: sliderComponent
+
+            Slider {}
         }
 
         function test_vertical() {
@@ -136,7 +153,7 @@ Item {
             var sliderDeltaRatio = 1; //(slider.maximumValue - slider.minimumValue)/slider.width
             var ratio = mouseRatio / sliderDeltaRatio
 
-            mouseWheel(slider, 5, 5, 20 * ratio, 0)
+            mouseWheel(slider, 5, 5, -20 * ratio, 0)
             compare(slider.value, 22)
 
             slider.maximumValue = 30
@@ -149,15 +166,15 @@ Item {
             compare(slider.value, 10)
 
             var previousValue = slider.value
-            mouseWheel(slider, 5, 5, 6 * ratio, 0)
+            mouseWheel(slider, 5, 5, -6 * ratio, 0)
             compare(slider.value, Math.round(previousValue + 6))
 
-            mouseWheel(slider, 5, 5, -6 * ratio, 0)
+            mouseWheel(slider, 5, 5, 6 * ratio, 0)
             compare(slider.value, previousValue)
 
             // Reach maximum
             slider.value = 0
-            mouseWheel(slider, 5, 5, 40 * ratio, 0)
+            mouseWheel(slider, 5, 5, -40 * ratio, 0)
             compare(slider.value, slider.maximumValue)
             slider.destroy()
         }
@@ -322,7 +339,7 @@ Item {
 
             // drag less than the threshold distance
             mouseMove(control, pt.x + Settings.dragThreshold - 1, pt.y)
-            compare(control.value, 0.5)
+            verify(control.value > 0.5)
 
             // drag over the threshold
             mouseMove(control, pt.x + Settings.dragThreshold + 1, pt.y)
@@ -360,6 +377,35 @@ Item {
             // Tidy up.
             control.destroy()
             component.destroy()
+        }
+
+        Component {
+            id: namedHandleStyle
+
+            SliderStyle {
+                handle: Rectangle {
+                    objectName: "sliderHandle"
+                    implicitWidth:  20
+                    implicitHeight: 20
+                    color: "salmon"
+                }
+            }
+        }
+
+        function test_minimumValueLargerThanValue() {
+            var control = sliderComponent.createObject(container, { "style": namedHandleStyle, "minimumValue": 0, "maximumValue": 2, value: "minimumValue" });
+            verify(control);
+
+            var handle = findChild(control, "sliderHandle");
+            verify(handle);
+
+            // The handle should stay within the bounds of the slider when
+            // minimumValue is set to a value larger than "value".
+            control.minimumValue = 1;
+            compare(control.value, control.minimumValue);
+            compare(handle.mapToItem(null, 0, 0).x, 0)
+
+            control.destroy();
         }
     }
 }

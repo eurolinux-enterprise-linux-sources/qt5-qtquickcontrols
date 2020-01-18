@@ -40,8 +40,12 @@ CONTROLS_QML_FILES = \
     ToolBar.qml \
     ToolButton.qml
 
-!qtquickcompiler: QML_FILES += $$CONTROLS_QML_FILES
-qtquickcompiler: DEFINES += ALWAYS_LOAD_FROM_RESOURCES
+qtquickcompiler {
+    DEFINES += ALWAYS_LOAD_FROM_RESOURCES
+} else {
+    QML_FILES += $$CONTROLS_QML_FILES
+    !static: CONFIG += qmlcache
+}
 
 SOURCES += $$PWD/plugin.cpp
 HEADERS += $$PWD/plugin.h
@@ -51,35 +55,29 @@ OTHER_FILES += doc/src/*
 include(plugin.pri)
 include(Private/private.pri)
 include(Styles/styles.pri)
+include(Shaders/shaders.pri)
 
 osx: LIBS_PRIVATE += -framework Carbon
 
-# Create the resource file
-GENERATED_RESOURCE_FILE = $$OUT_PWD/controls.qrc
+!qmlcache {
+    INCLUDED_RESOURCE_FILES = \
+        $$CONTROLS_QML_FILES \
+        $$PRIVATE_QML_FILES \
+        $$STYLES_QML_FILES
 
-INCLUDED_RESOURCE_FILES = \
-    $$CONTROLS_QML_FILES \
-    $$PRIVATE_QML_FILES \
-    $$STYLES_QML_FILES
-
-RESOURCE_CONTENT = \
-    "<RCC>" \
-    "<qresource prefix=\"/QtQuick/Controls\">"
-
-for(resourcefile, INCLUDED_RESOURCE_FILES) {
-    resourcefileabsolutepath = $$absolute_path($$resourcefile)
-    relativepath_in = $$relative_path($$resourcefileabsolutepath, $$_PRO_FILE_PWD_)
-    relativepath_out = $$relative_path($$resourcefileabsolutepath, $$OUT_PWD)
-    RESOURCE_CONTENT += "<file alias=\"$$relativepath_in\">$$relativepath_out</file>"
+} else {
+    QML_FILES *= $$CONTROLS_QML_FILES \
+                 $$PRIVATE_QML_FILES \
+                 $$STYLES_QML_FILES
+    OTHER_FILES += $$QML_FILES \
+                 $$SHADER_FILES
 }
 
-RESOURCE_CONTENT += \
-    "</qresource>" \
-    "</RCC>"
+INCLUDED_RESOURCE_FILES += $$SHADER_FILES
 
-write_file($$GENERATED_RESOURCE_FILE, RESOURCE_CONTENT)|error("Aborting.")
-
-RESOURCES += $$GENERATED_RESOURCE_FILE
+controls.files = $$INCLUDED_RESOURCE_FILES
+controls.prefix = /QtQuick/Controls
+RESOURCES += controls
 
 CONFIG += no_cxx_module
 load(qml_plugin)

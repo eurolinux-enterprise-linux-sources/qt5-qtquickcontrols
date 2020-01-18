@@ -1,34 +1,37 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
-** Contact: http://www.qt.io/licensing/
+** Copyright (C) 2016 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the Qt Quick Controls module of the Qt Toolkit.
 **
-** $QT_BEGIN_LICENSE:LGPL3$
+** $QT_BEGIN_LICENSE:LGPL$
 ** Commercial License Usage
 ** Licensees holding valid commercial Qt licenses may use this file in
 ** accordance with the commercial license agreement provided with the
 ** Software or, alternatively, in accordance with the terms contained in
 ** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see http://www.qt.io/terms-conditions. For further
-** information use the contact form at http://www.qt.io/contact-us.
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
 ** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPLv3 included in the
+** Foundation and appearing in the file LICENSE.LGPL3 included in the
 ** packaging of this file. Please review the following information to
 ** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl.html.
+** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
 **
 ** GNU General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or later as published by the Free
-** Software Foundation and appearing in the file LICENSE.GPL included in
-** the packaging of this file. Please review the following information to
-** ensure the GNU General Public License version 2.0 requirements will be
-** met: http://www.gnu.org/licenses/gpl-2.0.html.
+** General Public License version 2.0 or (at your option) the GNU General
+** Public license version 3 or any later version approved by the KDE Free
+** Qt Foundation. The licenses are as published by the Free Software
+** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
+** included in the packaging of this file. Please review the following
+** information to ensure the GNU General Public License requirements will
+** be met: https://www.gnu.org/licenses/gpl-2.0.html and
+** https://www.gnu.org/licenses/gpl-3.0.html.
 **
 ** $QT_END_LICENSE$
 **
@@ -51,7 +54,7 @@ static const qreal pixelDeltaAdjustment = 0.5;
 // comes originally from QTextEdit, which sets 20px steps by default.
 static const qreal defaultScrollSpeed = 20.0;
 
-QQuickWheelArea::QQuickWheelArea(QQuickItem *parent)
+QQuickWheelArea1::QQuickWheelArea1(QQuickItem *parent)
     : QQuickItem(parent),
       m_horizontalMinimumValue(0),
       m_horizontalMaximumValue(0),
@@ -67,33 +70,38 @@ QQuickWheelArea::QQuickWheelArea(QQuickItem *parent)
 
 }
 
-QQuickWheelArea::~QQuickWheelArea()
+QQuickWheelArea1::~QQuickWheelArea1()
 {
 
 }
 
-bool QQuickWheelArea::isAtXEnd() const
+bool QQuickWheelArea1::isAtXEnd() const
 {
     return qFuzzyCompare(m_horizontalMaximumValue, m_horizontalValue);
 }
 
-bool QQuickWheelArea::isAtXBeginning() const
+bool QQuickWheelArea1::isAtXBeginning() const
 {
     return qFuzzyCompare(m_horizontalMinimumValue, m_horizontalValue);
 }
 
-bool QQuickWheelArea::isAtYEnd() const
+bool QQuickWheelArea1::isAtYEnd() const
 {
     return qFuzzyCompare(m_verticalMaximumValue, m_verticalValue);
 }
 
-bool QQuickWheelArea::isAtYBeginning() const
+bool QQuickWheelArea1::isAtYBeginning() const
 {
     return qFuzzyCompare(m_verticalMinimumValue, m_verticalValue);
 }
 
+bool QQuickWheelArea1::isInverted() const
+{
+    return m_inverted;
+}
+
 #ifndef QT_NO_WHEELEVENT
-void QQuickWheelArea::wheelEvent(QWheelEvent *we)
+void QQuickWheelArea1::wheelEvent(QWheelEvent *we)
 {
     if (we->phase() == Qt::ScrollBegin)
         setActive(true);
@@ -102,6 +110,8 @@ void QQuickWheelArea::wheelEvent(QWheelEvent *we)
 
     QPoint numPixels = we->pixelDelta();
     QPoint numDegrees = we->angleDelta() / 8;
+
+    m_inverted = we->inverted();
 
     if (!numPixels.isNull()) {
         setHorizontalDelta(numPixels.x() * pixelDeltaAdjustment);
@@ -129,47 +139,63 @@ void QQuickWheelArea::wheelEvent(QWheelEvent *we)
 }
 #endif
 
-void QQuickWheelArea::setHorizontalMinimumValue(qreal value)
+void QQuickWheelArea1::setHorizontalMinimumValue(qreal value)
 {
+    if (value == m_horizontalMinimumValue)
+        return;
+
     m_horizontalMinimumValue = value;
+    emit horizontalMinimumValueChanged();
 }
 
-qreal QQuickWheelArea::horizontalMinimumValue() const
+qreal QQuickWheelArea1::horizontalMinimumValue() const
 {
     return m_horizontalMinimumValue;
 }
 
-void QQuickWheelArea::setHorizontalMaximumValue(qreal value)
+void QQuickWheelArea1::setHorizontalMaximumValue(qreal value)
 {
+    if (value == m_horizontalMaximumValue)
+        return;
+
     m_horizontalMaximumValue = value;
+    emit horizontalMaximumValueChanged();
 }
 
-qreal QQuickWheelArea::horizontalMaximumValue() const
+qreal QQuickWheelArea1::horizontalMaximumValue() const
 {
     return m_horizontalMaximumValue;
 }
 
-void QQuickWheelArea::setVerticalMinimumValue(qreal value)
+void QQuickWheelArea1::setVerticalMinimumValue(qreal value)
 {
+    if (value == m_verticalMinimumValue)
+        return;
+
     m_verticalMinimumValue = value;
+    emit verticalMinimumValueChanged();
 }
 
-qreal QQuickWheelArea::verticalMinimumValue() const
+qreal QQuickWheelArea1::verticalMinimumValue() const
 {
     return m_verticalMinimumValue;
 }
 
-void QQuickWheelArea::setVerticalMaximumValue(qreal value)
+void QQuickWheelArea1::setVerticalMaximumValue(qreal value)
 {
+    if (value == m_verticalMaximumValue)
+        return;
+
     m_verticalMaximumValue = value;
+    emit verticalMaximumValueChanged();
 }
 
-qreal QQuickWheelArea::verticalMaximumValue() const
+qreal QQuickWheelArea1::verticalMaximumValue() const
 {
     return m_verticalMaximumValue;
 }
 
-void QQuickWheelArea::setHorizontalValue(qreal value)
+void QQuickWheelArea1::setHorizontalValue(qreal value)
 {
     value = qBound<qreal>(m_horizontalMinimumValue, value, m_horizontalMaximumValue);
 
@@ -179,12 +205,12 @@ void QQuickWheelArea::setHorizontalValue(qreal value)
     }
 }
 
-qreal QQuickWheelArea::horizontalValue() const
+qreal QQuickWheelArea1::horizontalValue() const
 {
     return m_horizontalValue;
 }
 
-void QQuickWheelArea::setVerticalValue(qreal value)
+void QQuickWheelArea1::setVerticalValue(qreal value)
 {
     value = qBound<qreal>(m_verticalMinimumValue, value, m_verticalMaximumValue);
 
@@ -194,12 +220,12 @@ void QQuickWheelArea::setVerticalValue(qreal value)
     }
 }
 
-qreal QQuickWheelArea::verticalValue() const
+qreal QQuickWheelArea1::verticalValue() const
 {
     return m_verticalValue;
 }
 
-void QQuickWheelArea::setVerticalDelta(qreal value)
+void QQuickWheelArea1::setVerticalDelta(qreal value)
 {
     m_verticalDelta = value;
     setVerticalValue(m_verticalValue - m_verticalDelta);
@@ -207,12 +233,12 @@ void QQuickWheelArea::setVerticalDelta(qreal value)
     emit verticalWheelMoved();
 }
 
-qreal QQuickWheelArea::verticalDelta() const
+qreal QQuickWheelArea1::verticalDelta() const
 {
     return m_verticalDelta;
 }
 
-void QQuickWheelArea::setHorizontalDelta(qreal value)
+void QQuickWheelArea1::setHorizontalDelta(qreal value)
 {
     m_horizontalDelta = value;
     setHorizontalValue(m_horizontalValue - m_horizontalDelta);
@@ -220,12 +246,12 @@ void QQuickWheelArea::setHorizontalDelta(qreal value)
     emit horizontalWheelMoved();
 }
 
-qreal QQuickWheelArea::horizontalDelta() const
+qreal QQuickWheelArea1::horizontalDelta() const
 {
     return m_horizontalDelta;
 }
 
-void QQuickWheelArea::setScrollSpeed(qreal value)
+void QQuickWheelArea1::setScrollSpeed(qreal value)
 {
     if (value != m_scrollSpeed) {
         m_scrollSpeed = value;
@@ -233,17 +259,17 @@ void QQuickWheelArea::setScrollSpeed(qreal value)
     }
 }
 
-qreal QQuickWheelArea::scrollSpeed() const
+qreal QQuickWheelArea1::scrollSpeed() const
 {
     return m_scrollSpeed;
 }
 
-bool QQuickWheelArea::isActive() const
+bool QQuickWheelArea1::isActive() const
 {
     return m_active;
 }
 
-void QQuickWheelArea::setActive(bool active)
+void QQuickWheelArea1::setActive(bool active)
 {
     if (active != m_active) {
         m_active = active;
