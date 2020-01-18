@@ -39,30 +39,18 @@
 ****************************************************************************/
 
 import QtQuick 2.2
+import QtQuick.Controls 1.2
+import QtQuick.Controls.Private 1.0
 import QtTest 1.0
 
-TestCase {
-    id: testCase
-    name: "Tests_Layout"
-    when:windowShown
-    width:400
-    height:400
+RangeModel {
+    id: rangemodel
+    positionAtMinimum: 0
+    positionAtMaximum: 100
+    stepSize: 1
 
-    function test_invalidParent() {
-        ignoreWarning('Layout must be attached to Item elements')
-        var object = Qt.createQmlObject('import QtQuick 2.2; import QtQuick.Layouts 1.0; QtObject { Layout.fillWidth: true }', testCase, '');
-        object.destroy()
-    }
-
-    function test_defaultPropertyAliasCrash() {
-        var containerUserComponent = Qt.createComponent("layout/ContainerUser.qml");
-        compare(containerUserComponent.status, Component.Ready);
-
-        var containerUser = containerUserComponent.createObject(testCase);
-        verify(containerUser);
-
-        // Shouldn't crash.
-        containerUser.destroy();
+    property QtObject spy: SignalSpy {
+        target: rangemodel
+        signalName: "valueChanged"
     }
 }
-
