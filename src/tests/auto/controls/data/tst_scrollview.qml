@@ -1,22 +1,12 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
+** Copyright (C) 2015 The Qt Company Ltd.
+** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the test suite of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
+** You may use this file under the terms of the BSD license as follows:
 **
 ** "Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are
@@ -51,7 +41,6 @@
 import QtQuick 2.2
 import QtTest 1.0
 import QtQuick.Controls 1.2
-import QtQuick.Controls.Styles 1.1
 import QtQuickControlsTests 1.0
 
 Item {
@@ -101,107 +90,6 @@ TestCase {
         scrollView.destroy()
     }
 
-    Component {
-        id: dragFetchAppendComponent
-
-        ScrollView {
-            width: 400; height: 400
-            frameVisible: false
-            style: ScrollViewStyle {
-                transientScrollBars: false
-                handle: Rectangle {
-                    implicitWidth: 16; implicitHeight: 16
-                    color: "red"
-                }
-                scrollBarBackground: Item {width: 16 ; height: 16}
-                incrementControl: Rectangle {
-                    width: 16; height: 16
-                    color: "blue"
-                }
-                decrementControl: Rectangle {
-                    width: 16; height: 16
-                    color: "blue"
-                }
-            }
-            ListView {
-                id: view
-
-                verticalLayoutDirection: ListView.BottomToTop
-                model: TestFetchAppendModel { }
-                delegate: Text {
-                    width: view.width
-                    height: 60
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    text: "Item %1".arg(model.index)
-                }
-            }
-        }
-    }
-
-    Component {
-        id: tabNavigationComponent
-        ApplicationWindow {
-            property alias scrollView: view
-            property alias control1: text1
-            property alias control2: text2
-            property alias control3: button
-
-            width: 400
-            height: 300
-            visible: true
-            modality: Qt.WindowModal
-
-            ScrollView {
-                id: view
-                anchors { top: parent.top; left: parent.left; right: parent.right; bottom: button.top }
-                Column {
-                    width: view.width
-                    TextField {
-                        id: text1
-                        anchors { left: parent.left; right: parent.right }
-                        height: 30
-                    }
-                    TextField {
-                        id: text2
-                        anchors { left: parent.left; right: parent.right }
-                        height: 30
-                    }
-                }
-            }
-
-            Button {
-                id: button
-                anchors.bottom: parent.bottom
-                text: "hi"
-            }
-        }
-    }
-
-    function test_dragFetchAppend() {   // QTBUG-50795
-        var scrollView = dragFetchAppendComponent.createObject(container)
-        verify(scrollView !== null, "view created is null")
-        waitForRendering(scrollView)
-        tryCompare(scrollView.flickableItem, "contentHeight", 60 * 20)
-
-        // After scrolling to the end, view should ask the model to fetch more
-        // data, content height should increase and scrollbar handle should move
-        // to the center.
-        mouseDrag(scrollView, scrollView.width - 2, scrollView.height - 8 - 16, 0, -scrollView.height + 8 + 16)
-        waitForRendering(scrollView)
-
-        // Move it again to fetch more data from the model.
-        mouseDrag(scrollView, scrollView.width - 2, scrollView.height / 2, 0, -scrollView.height / 2  + 8 + 16)
-        waitForRendering(scrollView)
-
-        mouseRelease(scrollView, scrollView.width - 2, 8 + 16)
-        waitForRendering(scrollView)
-
-        verify(Math.round(scrollView.flickableItem.contentHeight) > 60 * 20)
-        verify(Math.round(scrollView.flickableItem.contentY) < -(60 * 20))
-
-        scrollView.destroy()
-    }
 
     function test_scrollbars() {
         var component = scrollViewComponent
@@ -356,51 +244,6 @@ TestCase {
         verify(control.control1.activeFocus)
         verify(!control.control2.activeFocus)
         verify(!control.control3.activeFocus)
-        control.destroy()
-    }
-
-    function test_navigation_QTBUG_64596() {
-        if (Qt.styleHints.tabFocusBehavior != Qt.TabFocusAllControls)
-            skip("This function doesn't support NOT iterating all.")
-
-        var control = tabNavigationComponent.createObject(container)
-        verify(control)
-        waitForRendering(control.contentItem)
-
-        control.requestActivate()
-        control.control1.forceActiveFocus()
-        verify(control.control1.activeFocus)
-        verify(!control.control2.activeFocus)
-        verify(!control.control3.activeFocus)
-        keyPress(Qt.Key_Tab)
-        verify(!control.control1.activeFocus)
-        verify(control.control2.activeFocus)
-        verify(!control.control3.activeFocus)
-        keyPress(Qt.Key_Tab)
-        verify(!control.control1.activeFocus)
-        verify(!control.control2.activeFocus)
-        verify(control.control3.activeFocus)
-        keyPress(Qt.Key_Tab)
-        verify(control.control1.activeFocus)
-        verify(!control.control2.activeFocus)
-        verify(!control.control3.activeFocus)
-        // and backwards
-        keyPress(Qt.Key_Tab, Qt.ShiftModifier)
-        verify(!control.control1.activeFocus)
-        verify(!control.control2.activeFocus)
-        verify(control.control3.activeFocus)
-        keyPress(Qt.Key_Tab, Qt.ShiftModifier)
-        verify(!control.control1.activeFocus)
-        verify(control.control2.activeFocus)
-        verify(!control.control3.activeFocus)
-        keyPress(Qt.Key_Tab, Qt.ShiftModifier)
-        verify(control.control1.activeFocus)
-        verify(!control.control2.activeFocus)
-        verify(!control.control3.activeFocus)
-        keyPress(Qt.Key_Tab, Qt.ShiftModifier)
-        verify(!control.control1.activeFocus)
-        verify(!control.control2.activeFocus)
-        verify(control.control3.activeFocus)
         control.destroy()
     }
 }

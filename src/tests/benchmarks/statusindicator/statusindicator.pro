@@ -1,7 +1,6 @@
 TEMPLATE = app
 TARGET = tst_bench_statusindicator
 QT = core quick testlib
-CONFIG += benchmark
 
 SOURCES += \
     tst_statusindicator.cpp

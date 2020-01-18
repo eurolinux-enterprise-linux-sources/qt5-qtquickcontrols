@@ -2,7 +2,7 @@ TEMPLATE = app
 TARGET = tst_objectcount
 
 QT += quick testlib core-private
-CONFIG += benchmark
+CONFIG += testcase
 osx:CONFIG -= app_bundle
 
 SOURCES += \

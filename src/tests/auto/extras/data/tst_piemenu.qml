@@ -1,22 +1,12 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
+** Copyright (C) 2015 The Qt Company Ltd.
+** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the test suite of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
+** You may use this file under the terms of the BSD license as follows:
 **
 ** "Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are
@@ -71,6 +61,11 @@ Item {
         readonly property real menuWidth: 200
         readonly property real menuHeight: 200
 
+        // The root item for each test, if one exists.
+        property Item root
+        // The pie menu for each test, if no root is created.
+        property Item pieMenu
+
         SignalSpy {
             id: currentIndexSignalSpy
         }
@@ -83,16 +78,15 @@ Item {
             id: selectedAngleChangedSpy
         }
 
-        Component {
-            id: pieMenuComponent
-
-            PieMenu {}
-        }
-
         function cleanup() {
             currentIndexSignalSpy.clear();
             actionSignalSpy.clear();
             selectedAngleChangedSpy.clear();
+
+            if (root)
+                root.destroy();
+            if (pieMenu)
+                pieMenu.destroy();
         }
 
         function mouseButtonToString(button) {
@@ -105,24 +99,24 @@ Item {
         }
 
         function test_instance() {
-            var pieMenu = createTemporaryObject(pieMenuComponent, container);
+            var pieMenu = Qt.createQmlObject("import QtQuick.Extras 1.4; PieMenu { }", container, "");
             verify(pieMenu, "PieMenu: failed to create an instance");
             verify(pieMenu.__style);
             compare(pieMenu.triggerMode, TriggerMode.TriggerOnClick);
             pieMenu.destroy();
 
             // Ensure setting visible = true; visible = false; in onCompleted doesn't cause any problems.
-            var visibleOnCompletedComponent = Qt.createComponent("PieMenuVisibleOnCompleted.qml");
-            tryCompare(visibleOnCompletedComponent, "status", Component.Ready);
-            pieMenu = createTemporaryObject(visibleOnCompletedComponent, container);
+            var pieMenuComponent = Qt.createComponent("PieMenuVisibleOnCompleted.qml");
+            tryCompare(pieMenuComponent, "status", Component.Ready);
+            pieMenu = pieMenuComponent.createObject(container);
             verify(pieMenu, "PieMenu: failed to create an instance");
             pieMenu.destroy();
 
             // Ensure constructing a menu as a property (and hence no parent)
             // with visible = true doesn't cause any problems.
-            var visibleButNoParentComponent = Qt.createComponent("PieMenuVisibleButNoParent.qml");
-            tryCompare(visibleButNoParentComponent, "status", Component.Ready);
-            pieMenu = createTemporaryObject(visibleButNoParentComponent, container);
+            pieMenuComponent = Qt.createComponent("PieMenuVisibleButNoParent.qml");
+            tryCompare(pieMenuComponent, "status", Component.Ready);
+            pieMenu = pieMenuComponent.createObject(container);
             verify(pieMenu, "PieMenu: failed to create an instance");
             pieMenu.destroy();
         }
@@ -130,12 +124,12 @@ Item {
         function test_triggerMode() {
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
             var pieMenu = root.pieMenu;
-            currentIndexSignalSpy.signalName = "currentIndexChanged"
+            currentIndexSignalSpy.signalName = "onCurrentIndexChanged"
             currentIndexSignalSpy.target = pieMenu;
-            actionSignalSpy.signalName = "actionTriggered";
+            actionSignalSpy.signalName = "onActionTriggered";
             actionSignalSpy.target = root;
 
             compare(pieMenu.triggerMode, TriggerMode.TriggerOnClick);
@@ -252,8 +246,6 @@ Item {
                     actionSignalSpy.clear();
                 }
             }
-
-            pieMenuComponent.destroy()
         }
 
         function test_selectionAngle_data() {
@@ -367,7 +359,7 @@ Item {
                 skip("Fails with touch screens");
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
             var pieMenu = root.pieMenu;
 
@@ -385,8 +377,6 @@ Item {
             mouseMove(root, data.mouseX, data.mouseY);
             compare(pieMenu.selectionAngle, data.expectedAngle);
             compare(pieMenu.currentIndex, data.expectedCurrentIndex);
-
-            pieMenuComponent.destroy()
         }
 
         function test_sectionAngles_data() {
@@ -421,7 +411,7 @@ Item {
         function test_sectionAngles(data) {
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var pieMenu = root.pieMenu;
 
             pieMenu.__style.startAngle = data.startAngle;
@@ -430,8 +420,6 @@ Item {
             compare(pieMenu.__protectedScope.sectionStartAngle(data.section), data.expectedSectionStartAngle);
             compare(pieMenu.__protectedScope.sectionCenterAngle(data.section), data.expectedSectionCenterAngle);
             compare(pieMenu.__protectedScope.sectionEndAngle(data.section), data.expectedSectionEndAngle);
-
-            pieMenuComponent.destroy()
         }
 
         function test_bounds_data() {
@@ -477,7 +465,7 @@ Item {
         function test_bounds(data) {
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
             var pieMenu = root.pieMenu;
 
@@ -509,8 +497,6 @@ Item {
             // Angles shouldn't change.
             compare(pieMenu.__style.startAngle, originalStartAngle);
             compare(pieMenu.__style.endAngle, originalEndAngle);
-
-            pieMenuComponent.destroy()
         }
 
         function test_hideItem_data() {
@@ -526,7 +512,7 @@ Item {
                 skip("Fails with touch screens");
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
             var pieMenu = root.pieMenu;
 
@@ -551,7 +537,7 @@ Item {
             compare(pieMenu.__style.endAngle, originalEndAngle);
 
             for (i = 0; i < data.indexVisibility.length; ++i) {
-                actionSignalSpy.signalName = "actionTriggered";
+                actionSignalSpy.signalName = "onActionTriggered";
                 actionSignalSpy.target = root;
 
                 compare(pieMenu.visible, false);
@@ -575,13 +561,10 @@ Item {
 
                 actionSignalSpy.clear();
             }
-
-            pieMenuComponent.destroy()
         }
 
         function test_addItem() {
-            var pieMenu = createTemporaryObject(pieMenuComponent, container);
-            verify(pieMenu);
+            pieMenu = Qt.createQmlObject("import QtQuick.Extras 1.1; PieMenu {}", container);
             compare(pieMenu.menuItems.length, 0);
 
             pieMenu.addItem("Action 1");
@@ -589,8 +572,7 @@ Item {
         }
 
         function test_insertItem() {
-            var pieMenu = createTemporaryObject(pieMenuComponent, container);
-            verify(pieMenu);
+            pieMenu = Qt.createQmlObject("import QtQuick.Extras 1.1; PieMenu {}", container);
             compare(pieMenu.menuItems.length, 0);
 
             pieMenu.insertItem(0, "Action 1");
@@ -606,7 +588,7 @@ Item {
         function test_removeItem() {
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var pieMenu = root.pieMenu;
 
             var originalLength = pieMenu.menuItems.length;
@@ -614,16 +596,14 @@ Item {
                 pieMenu.removeItem(pieMenu.menuItems[pieMenu.menuItems.length - 1]);
                 compare(pieMenu.menuItems.length, originalLength - (i + 1));
             }
-
-            pieMenuComponent.destroy()
         }
 
         function debugMousePosition(pieMenu, mouseX, mouseY, positionText) {
-            var rectItem = createTemporaryQmlObject("import QtQuick 2.0; Rectangle { width: 10; height: 10; radius: 5; color: 'red' }", pieMenu);
+            var rectItem = Qt.createQmlObject("import QtQuick 2.0; Rectangle { width: 10; height: 10; radius: 5; color: 'red' }", pieMenu);
             rectItem.x = mouseX - rectItem.width / 2;
             rectItem.y = mouseY - rectItem.height / 2;
 
-            var textItem = createTemporaryQmlObject("import QtQuick 2.0; Text {}", rectItem);
+            var textItem = Qt.createQmlObject("import QtQuick 2.0; Text {}", rectItem);
             textItem.text = positionText;
             textItem.font.pixelSize = 8;
             textItem.anchors.centerIn = textItem.parent;
@@ -636,9 +616,9 @@ Item {
             // as expected and the current item is cleared when the mouse moves outside the menu
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
-            var pieMenu = root.pieMenu;
+            pieMenu = root.pieMenu;
 
             // Make the menu visible at (0,0)
             waitForRendering(root);
@@ -698,8 +678,6 @@ Item {
                 compare(pieMenu.currentIndex, expectedCurrentIndex, data[i].name + ": current index should be "
                     + expectedCurrentIndex + " when mouse is at " + mouseX + ", " + mouseY);
             }
-
-            pieMenuComponent.destroy()
         }
 
         function test_QTRD3027() {
@@ -709,7 +687,7 @@ Item {
                 skip("Fails with touch screens");
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
             var pieMenu = root.pieMenu;
 
@@ -724,14 +702,12 @@ Item {
             // Move over middle item
             mouseMove(root, 100, 50)
             compare(pieMenu.currentIndex, 1)
-            selectedAngleChangedSpy.signalName = "selectionAngleChanged"
+            selectedAngleChangedSpy.signalName = "onSelectionAngleChanged"
             selectedAngleChangedSpy.target = pieMenu;
             // Move outside the middle item without changing angle
             mouseMove(root, 100, 98)
             compare(pieMenu.currentIndex, -1)
             compare(selectedAngleChangedSpy.count, 0)
-
-            pieMenuComponent.destroy()
         }
 
         function test_rotatedBoundingItem() {
@@ -739,7 +715,7 @@ Item {
                 skip("Fails with touch screens");
             var pieMenuComponent = Qt.createComponent("PieMenuRotatedBoundingItem.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
             var pieMenu = root.pieMenu;
 
@@ -751,13 +727,11 @@ Item {
             if (pieMenu.__style.title)
                 tryCompare(pieMenu.__panel.titleItem, "text", "Action 1");
 
-            actionSignalSpy.signalName = "actionTriggered";
+            actionSignalSpy.signalName = "onActionTriggered";
             actionSignalSpy.target = root;
             mouseClick(root, 230, 145);
             compare(actionSignalSpy.count, 1);
             compare(actionSignalSpy.signalArguments[0][0], 0);
-
-            pieMenuComponent.destroy()
         }
 
         function test_boundingItem() {
@@ -769,7 +743,7 @@ Item {
             // Tests boundingItem when there are nested margins.
             var pieMenuComponent = Qt.createComponent("PieMenuBoundingItem.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var mouseArea = root.mouseArea;
             var pieMenu = root.pieMenu;
 
@@ -789,8 +763,6 @@ Item {
 
             container.width = oldContainerWidth;
             container.height = oldContainerHeight;
-
-            pieMenuComponent.destroy()
         }
 
         function test_longPressTriggerOnClick() {
@@ -799,7 +771,7 @@ Item {
             // press before the release (TriggerOnClick).
             var pieMenuComponent = Qt.createComponent("PieMenu3ItemsLongPress.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var pieMenu = root.pieMenu;
 
             mousePress(root, 0, 0, Qt.LeftButton);
@@ -821,17 +793,15 @@ Item {
             compare(pieMenu.visible, false);
             compare(pieMenu.__mouseThief.receivedPressEvent, false);
             compare(pieMenu.__protectedScope.pressedIndex, -1);
-
-            pieMenuComponent.destroy()
         }
 
         function test_keepMenuOpenWhenTriggered() {
             // This functionality is used in the flat example.
             var pieMenuComponent = Qt.createComponent("PieMenu3ItemsKeepOpen.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
+            root = pieMenuComponent.createObject(container);
             var pieMenu = root.pieMenu;
-            actionSignalSpy.signalName = "actionTriggered";
+            actionSignalSpy.signalName = "onActionTriggered";
             actionSignalSpy.target = root;
 
             mouseClick(root, 0, 0, Qt.LeftButton);
@@ -853,16 +823,14 @@ Item {
             tryCompare(pieMenu, "visible", true);
             compare(actionSignalSpy.count, 1);
             compare(actionSignalSpy.signalArguments[0][0], 2);
-
-            pieMenuComponent.destroy()
         }
 
         function test_pressedIndex() {
             var pieMenuComponent = Qt.createComponent("PieMenu3Items.qml");
             tryCompare(pieMenuComponent, "status", Component.Ready);
-            var root = createTemporaryObject(pieMenuComponent, container);
-            var pieMenu = root.pieMenu;
-            actionSignalSpy.signalName = "actionTriggered";
+            root = pieMenuComponent.createObject(container);
+            pieMenu = root.pieMenu;
+            actionSignalSpy.signalName = "onActionTriggered";
             actionSignalSpy.target = root;
 
             mouseClick(root, 0, 0, Qt.LeftButton);
@@ -878,8 +846,6 @@ Item {
             compare(actionSignalSpy.count, 1);
             compare(actionSignalSpy.signalArguments[0][0], 0);
             compare(pieMenu.__protectedScope.pressedIndex, -1);
-
-            pieMenuComponent.destroy()
         }
     }
 }

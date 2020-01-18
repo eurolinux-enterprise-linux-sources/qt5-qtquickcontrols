@@ -3,22 +3,29 @@
 
 %define docs 1
 
+#define prerelease
+
 Name:    qt5-%{qt_module}
 Summary: Qt5 - module with set of QtQuick controls
-Version: 5.9.7
-Release: 1%{?dist}
+Version: 5.6.1
+Release: 10%{?prerelease:.%{prerelease}}%{?dist}
 
 License: LGPLv2 or LGPLv3 and GFDL
 Url:     http://www.qt.io
-Source0: http://download.qt.io/official_releases/qt/5.9/%{version}/submodules/%{qt_module}-opensource-src-%{version}.tar.xz
-
-# filter qml provides
-%global __provides_exclude_from ^%{_qt5_archdatadir}/qml/.*\\.so$
+Source0: http://download.qt.io/snapshots/qt/5.6/%{version}%{?prerelease:-%{prerelease}}/submodules/%{qt_module}-opensource-src-%{version}%{?prerelease:-%{prerelease}}.tar.xz
 
 BuildRequires:  qt5-qtbase-devel >= %{version}
 BuildRequires:  qt5-qtbase-static >= %{version}
+BuildRequires:  pkgconfig(Qt5Quick)
+BuildRequires:  pkgconfig(Qt5Qml)
+BuildRequires:  pkgconfig(Qt5Network)
+BuildRequires:  pkgconfig(Qt5Gui)
+BuildRequires:  pkgconfig(Qt5Core)
 
-BuildRequires:  qt5-qtdeclarative-devel
+BuildRequires:  qt5-qtbase-private-devel
+%{?_qt5:Requires: %{_qt5}%{?_isa} = %{_qt5_version}}
+BuildRequires:  qt5-qtdeclarative-private-devel
+%{?_qt5:Requires: qt5-qtdeclarative%{?_isa} = %{_qt5_version}}
 
 %description
 The Qt Quick Controls module provides a set of controls that can be used to
@@ -44,11 +51,13 @@ Requires: %{name}%{?_isa} = %{version}-%{release}
 
 
 %prep
-%setup -q -n %{qt_module}-opensource-src-%{version}
+%setup -q -n %{qt_module}-opensource-src-%{version}%{?prerelease:-%{prerelease}}
 
 
 %build
-%{qmake_qt5}
+mkdir %{_target_platform}
+pushd %{_target_platform}
+%{qmake_qt5} ..
 
 make %{?_smp_mflags}
 
@@ -58,14 +67,14 @@ make %{?_smp_mflags}
 QT_HASH_SEED=0; export QT_HASH_SEED
 make %{?_smp_mflags} docs
 %endif
-
+popd
 
 
 %install
-make install INSTALL_ROOT=%{buildroot}
+make install INSTALL_ROOT=%{buildroot} -C %{_target_platform}
 
 %if 0%{?docs}
-make install_docs INSTALL_ROOT=%{buildroot}
+make install_docs INSTALL_ROOT=%{buildroot} -C %{_target_platform}
 %endif
 
 
@@ -78,6 +87,8 @@ make install_docs INSTALL_ROOT=%{buildroot}
 %doc LICENSE.FDL
 %{_qt5_docdir}/qtquickcontrols.qch
 %{_qt5_docdir}/qtquickcontrols/
+%{_qt5_docdir}/qtquicklayouts.qch
+%{_qt5_docdir}/qtquicklayouts/
 %{_qt5_docdir}/qtquickdialogs.qch
 %{_qt5_docdir}/qtquickdialogs/
 %{_qt5_docdir}/qtquickextras.qch
@@ -91,22 +102,6 @@ make install_docs INSTALL_ROOT=%{buildroot}
 
 
 %changelog
-* Thu Feb 07 2019 Jan Grulich <jgrulich@redhat.com> - 5.9.7-1
-- Update to 5.9.7
-  Resolves: bz#1564010
-
-* Fri Oct 06 2017 Jan Grulich <jgrulich@redhat.com> - 5.9.2-1
-- Update to 5.9.2
-  Resolves: bz#1482785
-
-* Mon Aug 28 2017 Jan Grulich <jgrulich@redhat.com> - 5.9.1-1
-- Update to 5.9.1
-  Resolves: bz#1482785
-
-* Wed Jan 11 2017 Jan Grulich <jgrulich@redhat.com> - 5.6.2-1
-- Update to 5.6.2
-  Resolves: bz#1384824
-
 * Tue Aug 30 2016 Jan Grulich <jgrulich@redhat.com> - 5.6.1-10
 - Increase build version to have newer version than in EPEL
   Resolves: bz#1317408
